@@ -1,0 +1,58 @@
+name: mernapp
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - mernapp
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: backend
+    restart: always
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server:/server
+      - /server/node_modules
+    working_dir: /server
+    command: npm run dev
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    networks:
+      - mernapp
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: always
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    working_dir: /app
+    command: npm run dev -- --host
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - mernapp
+
+volumes:
+  mongo_data:
+
+networks:
+  mernapp:
+    driver: bridge
